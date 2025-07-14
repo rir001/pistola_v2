@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Iniciar Sesión - Sistema de Préstamos{% endblock %}
+
+{% block login_content %}
+<div class="container-fluid vh-100">
+    <div class="row h-100">
+        <div class="col-lg-6 d-none d-lg-block p-0">
+            <div class="h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                <div class="text-center text-white">
+                    <i class="fas fa-handshake" style="font-size: 8rem; margin-bottom: 2rem;"></i>
+                    <h1 class="display-4 fw-bold">Sistema de Préstamos</h1>
+                    <p class="lead">Gestiona préstamos de manera eficiente y segura</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 d-flex align-items-center justify-content-center">
+            <div class="w-100" style="max-width: 400px;">
+                <div class="card shadow-lg">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <h2 class="fw-bold text-primary">Iniciar Sesión</h2>
+                            <p class="text-muted">Ingresa tus credenciales para continuar</p>
+                        </div>
+
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-danger" role="alert">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="username" class="form-label">
+                                    <i class="fas fa-user me-2"></i>Usuario
+                                </label>
+                                <input type="text" class="form-control form-control-lg" id="username" name="username" required>
+                            </div>
+                            <div class="mb-4">
+                                <label for="password" class="form-label">
+                                    <i class="fas fa-lock me-2"></i>Contraseña
+                                </label>
+                                <input type="password" class="form-control form-control-lg" id="password" name="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                Iniciar Sesión
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

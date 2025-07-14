@@ -4,9 +4,10 @@ from .models import Loan, Object, Person, Kind
 # Register your models here.
 @admin.register(Object)
 class ObjectAdmin(admin.ModelAdmin):
-    list_display = ('name', 'kind', 'description')
+    list_display = ('code', 'name', 'kind', 'number', 'description')
     list_filter = ('kind',)
-    search_fields = ('name', 'kind')
+    search_fields = ('name', 'kind__name', 'code')
+    readonly_fields = ('code',)
 
 @admin.register(Person)
 class PersonAdmin(admin.ModelAdmin):

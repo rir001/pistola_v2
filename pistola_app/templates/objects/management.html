@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Objetos - Sistema de Préstamos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-boxes me-2"></i>
+        Gestión de Objetos
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#newKindModal">
+            <i class="fas fa-plus me-2"></i>
+            Nuevo Tipo
+        </button>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bulkCreateModal">
+            <i class="fas fa-layer-group me-2"></i>
+            Crear en Lote
+        </button>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-primary">
+                    <i class="fas fa-boxes"></i>
+                </h5>
+                <h3 class="text-primary">{{ total_objects }}</h3>
+                <p class="card-text">Total Objetos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-info">
+                    <i class="fas fa-tags"></i>
+                </h5>
+                <h3 class="text-info">{{ kinds.count }}</h3>
+                <p class="card-text">Tipos de Objetos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-success">
+                    <i class="fas fa-check-circle"></i>
+                </h5>
+                <h3 class="text-success">{{ available_objects_count }}</h3>
+                <p class="card-text">Objetos Disponibles</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tipos de Objetos -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-tags me-2"></i>
+                    Tipos de Objetos
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if kinds %}
+                    <div class="row">
+                        {% for kind in kinds %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ kind.name }}</h6>
+                                    <p class="card-text text-muted">{{ kind.description|default:"Sin descripción" }}</p>
+                                    <small class="text-muted">
+                                        Código: {{ kind.name|slice:":3"|upper }}****
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-tags text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No hay tipos de objetos registrados</p>
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#newKindModal">
+                            Crear Primer Tipo
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Objetos Recientes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-box me-2"></i>
+                    Objetos Recientes
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if objects %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for object in objects %}
+                                <tr>
+                                    <td><span class="badge bg-secondary">{{ object.code }}</span></td>
+                                    <td>{{ object.name }}</td>
+                                    <td>{{ object.kind.name }}</td>
+                                    <td>
+                                        {% if object.is_loaned %}
+                                            <span class="badge bg-warning">Prestado</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Disponible</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ object.description|truncatechars:50 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-box text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No hay objetos registrados</p>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bulkCreateModal">
+                            Crear Primeros Objetos
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Nuevo Tipo -->
+<div class="modal fade" id="newKindModal" tabindex="-1" aria-labelledby="newKindModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newKindModalLabel">
+                    <i class="fas fa-plus me-2"></i>
+                    Crear Nuevo Tipo de Objeto
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'create_kind' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="kind_name" class="form-label">Nombre del Tipo</label>
+                        <input type="text" class="form-control" id="kind_name" name="name" required
+                               placeholder="Ej: Pelota, Computadora, Herramienta">
+                        <div class="form-text">Los primeros 3 caracteres se usarán para el código</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="kind_description" class="form-label">Descripción (Opcional)</label>
+                        <textarea class="form-control" id="kind_description" name="description" rows="3"
+                                  placeholder="Descripción del tipo de objeto"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Crear Tipo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear Objetos en Lote -->
+<div class="modal fade" id="bulkCreateModal" tabindex="-1" aria-labelledby="bulkCreateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkCreateModalLabel">
+                    <i class="fas fa-layer-group me-2"></i>
+                    Crear Objetos en Lote
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'create_objects_bulk' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    {% if kinds %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="kind" class="form-label">Tipo de Objeto</label>
+                                    <select class="form-select" id="kind" name="kind" required>
+                                        <option value="">Seleccionar tipo...</option>
+                                        {% for kind in kinds %}
+                                        <option value="{{ kind.id }}">{{ kind.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="object_name" class="form-label">Nombre del Objeto</label>
+                                    <input type="text" class="form-control" id="object_name" name="object_name" required
+                                           placeholder="Ej: Pelota de Fútbol">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="quantity" class="form-label">Cantidad</label>
+                                    <input type="number" class="form-control" id="quantity" name="quantity" 
+                                           min="1" max="100" value="1" required>
+                                    <div class="form-text">Máximo 100 objetos por lote</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="start_number" class="form-label">Número Inicial</label>
+                                    <input type="number" class="form-control" id="start_number" name="start_number" 
+                                           min="1" max="9999" value="1" required>
+                                    <div class="form-text">Número de secuencia inicial</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Se crearán códigos automáticamente basados en el tipo y número de secuencia.
+                            <br>Ejemplo: PEL0001, PEL0002, PEL0003...
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Primero debe crear al menos un tipo de objeto antes de crear objetos.
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    {% if kinds %}
+                        <button type="submit" class="btn btn-primary">Crear Objetos</button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

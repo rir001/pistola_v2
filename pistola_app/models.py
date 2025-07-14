@@ -26,25 +26,36 @@ class Object(models.Model):
     kind = models.ForeignKey(Kind, on_delete=models.DO_NOTHING)
     number = models.IntegerField(unique=False, validators=[validate_code])
 
-    code = models.CharField(max_length=7, unique=True)
+    code = models.CharField(max_length=7, primary_key=True, editable=False)
 
     description = models.TextField(blank=True)
 
+    def save(self, *args, **kwargs):
+        # Generar el código automáticamente
+        if not self.code:
+            kind_code = self.kind.name[:3].upper()
+            self.code = f"{kind_code}{self.number:04d}"
+        super().save(*args, **kwargs)
+
+    def is_loaned(self):
+        """Retorna True si el objeto está actualmente prestado"""
+        return self.loan_set.filter(return_date__isnull=True).exists()
+
     def __str__(self):
-        return self.name
+        return f"{self.code}"
 
 
 
 
 
 class Person(models.Model):
-    RUT = models.CharField(max_length=12, unique=True)
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    email = models.EmailField(unique=True)
+    RUT = models.CharField(max_length=12, primary_key=True)
+    first_name = models.CharField(max_length=50, blank=True)
+    last_name = models.CharField(max_length=50, blank=True)
+    email = models.EmailField(unique=True, blank=True)
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        return f"{self.RUT}"
 
 
 
@@ -56,4 +67,4 @@ class Loan(models.Model):
     return_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.object.name} loaned to {self.person.first_name} {self.person.last_name}"
+        return f"{self.object.name} loaned to {self.person.RUT}"

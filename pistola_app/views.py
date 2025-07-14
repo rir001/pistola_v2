@@ -1,3 +1,192 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
+from django.contrib import messages
+from django.utils import timezone
+from .models import Object, Person, Loan, Kind
+from django.http import JsonResponse
 
-# Create your views here.
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('loan_dashboard')
+        else:
+            messages.error(request, 'Usuario o contraseña incorrectos')
+    return render(request, 'auth/login.html')
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
+
+@login_required
+def loan_dashboard(request):
+    active_loans = Loan.objects.filter(return_date__isnull=True)
+    available_objects = Object.objects.exclude(loan__return_date__isnull=True)
+    recent_loans = Loan.objects.all().order_by('-loan_date')[:10]
+    
+    context = {
+        'active_loans': active_loans,
+        'available_objects': available_objects,
+        'recent_loans': recent_loans,
+    }
+    return render(request, 'loans/dashboard.html', context)
+
+@login_required
+def create_loan(request):
+    if request.method == 'POST':
+        object_code = request.POST.get('object_code')
+        person_rut = request.POST.get('person_rut')
+        
+        try:
+            obj = Object.objects.get(code=object_code)
+            
+            # Crear persona si no existe
+            person, created = Person.objects.get_or_create(
+                RUT=person_rut,
+                defaults={'first_name': '', 'last_name': '', 'email': ''}
+            )
+            
+            if created:
+                messages.info(request, f'Nueva persona registrada con RUT: {person_rut}')
+            
+            # Verificar que el objeto no esté prestado
+            if Loan.objects.filter(object=obj, return_date__isnull=True).exists():
+                messages.error(request, 'Este objeto ya está prestado')
+                return redirect('loan_dashboard')
+            
+            # Crear el préstamo
+            loan = Loan.objects.create(
+                object=obj,
+                person=person,
+                loan_date=timezone.now().date()
+            )
+            
+            messages.success(request, f'Préstamo creado exitosamente: {obj.name} a {person.RUT}')
+            return redirect('loan_dashboard')
+            
+        except Object.DoesNotExist:
+            messages.error(request, 'Objeto no encontrado')
+        except Exception as e:
+            messages.error(request, f'Error al crear el préstamo: {str(e)}')
+    
+    return redirect('loan_dashboard')
+
+@login_required
+def return_loan(request, loan_id):
+    if request.method == 'POST':
+        loan = get_object_or_404(Loan, id=loan_id)
+        if loan.return_date is None:
+            loan.return_date = timezone.now().date()
+            loan.save()
+            messages.success(request, f'Préstamo devuelto: {loan.object.name}')
+        else:
+            messages.warning(request, 'Este préstamo ya fue devuelto')
+    
+    return redirect('loan_dashboard')
+
+@login_required
+def search_objects(request):
+    query = request.GET.get('q', '')
+    if query:
+        objects = Object.objects.filter(name__icontains=query).exclude(loan__return_date__isnull=True)[:10]
+        results = [{'code': obj.code, 'name': obj.name} for obj in objects]
+        return JsonResponse({'objects': results})
+    return JsonResponse({'objects': []})
+
+@login_required
+def search_persons(request):
+    query = request.GET.get('q', '')
+    if query:
+        persons = Person.objects.filter(RUT__icontains=query)[:10]
+        results = [{'rut': person.RUT, 'name': f"{person.first_name} {person.last_name}".strip()} for person in persons]
+        return JsonResponse({'persons': results})
+    return JsonResponse({'persons': []})
+
+@login_required
+def objects_management(request):
+    """Vista para la gestión de objetos"""
+    kinds = Kind.objects.all()
+    objects = Object.objects.all().order_by('-code')[:20]  # Últimos 20 objetos
+    
+    # Estadísticas adicionales
+    total_objects = Object.objects.count()
+    available_objects_count = Object.objects.filter(loan__return_date__isnull=False).distinct().count() + Object.objects.filter(loan__isnull=True).count()
+    
+    context = {
+        'kinds': kinds,
+        'objects': objects,
+        'total_objects': total_objects,
+        'available_objects_count': available_objects_count,
+    }
+    return render(request, 'objects/management.html', context)
+
+@login_required
+def create_objects_bulk(request):
+    """Vista para crear objetos en lote"""
+    if request.method == 'POST':
+        try:
+            kind_id = request.POST.get('kind')
+            object_name = request.POST.get('object_name')
+            quantity = int(request.POST.get('quantity', 1))
+            start_number = int(request.POST.get('start_number', 1))
+            
+            if quantity > 100:
+                messages.error(request, 'No se pueden crear más de 100 objetos a la vez')
+                return redirect('objects_management')
+            
+            kind = Kind.objects.get(id=kind_id)
+            created_objects = []
+            errors = []
+            
+            for i in range(quantity):
+                current_number = start_number + i
+                try:
+                    obj = Object.objects.create(
+                        name=object_name,
+                        kind=kind,
+                        number=current_number,
+                        description=f'Creado en lote - {object_name}'
+                    )
+                    created_objects.append(obj.code)
+                except Exception as e:
+                    errors.append(f'Error al crear objeto #{current_number}: {str(e)}')
+            
+            if created_objects:
+                messages.success(request, f'Se crearon {len(created_objects)} objetos exitosamente')
+            
+            if errors:
+                for error in errors[:5]:  # Mostrar solo los primeros 5 errores
+                    messages.warning(request, error)
+                    
+        except Kind.DoesNotExist:
+            messages.error(request, 'Tipo de objeto no encontrado')
+        except ValueError:
+            messages.error(request, 'Cantidad o número inicial inválido')
+        except Exception as e:
+            messages.error(request, f'Error al crear objetos: {str(e)}')
+    
+    return redirect('objects_management')
+
+@login_required
+def create_kind(request):
+    """Vista para crear un nuevo tipo de objeto"""
+    if request.method == 'POST':
+        try:
+            name = request.POST.get('name')
+            description = request.POST.get('description', '')
+            
+            kind = Kind.objects.create(
+                name=name,
+                description=description
+            )
+            
+            messages.success(request, f'Tipo de objeto "{name}" creado exitosamente')
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear tipo de objeto: {str(e)}')
+    
+    return redirect('objects_management')
