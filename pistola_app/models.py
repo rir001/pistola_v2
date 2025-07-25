@@ -1,5 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from datetime import date, timedelta
+import numpy as np
+import pandas as pd
 
 class Kind(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -53,9 +56,27 @@ class Person(models.Model):
     first_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
     email = models.EmailField(unique=True, blank=True)
+    phone = models.CharField(max_length=20, blank=True)  # Nuevo campo
+    comments = models.TextField(blank=True)              # Nuevo campo
 
     def __str__(self):
         return f"{self.RUT}"
+
+    def get_debt(self):
+        loans = self.loan_set.all()
+        total_debt = 0
+        for loan in loans:
+            loan_date = loan.loan_date
+            if loan.return_date:
+                end_date = loan.return_date
+            else:
+                end_date = date.today()
+            # Calcular días hábiles (lunes a viernes)
+            days = np.busday_count(loan_date, end_date)
+            overdue = max(0, days - 2)
+            debt = min(overdue * 500, 6000)
+            total_debt += debt
+        return total_debt
 
 
 

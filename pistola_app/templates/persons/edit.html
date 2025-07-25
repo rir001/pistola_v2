@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Persona{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2><i class="fas fa-user-edit me-2"></i>Editar Persona</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">RUT</label>
+            <input type="text" class="form-control" value="{{ person.RUT }}" readonly>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" name="first_name" value="{{ person.first_name }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Apellido</label>
+            <input type="text" class="form-control" name="last_name" value="{{ person.last_name }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="email" value="{{ person.email }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Número</label>
+            <input type="text" class="form-control" name="phone" value="{{ person.phone }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Comentarios</label>
+            <textarea class="form-control" name="comments" rows="3">{{ person.comments }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Deuda</label>
+            <input type="text" class="form-control" value="${{ person.get_debt }}" readonly>
+        </div>
+        <button type="submit" class="btn btn-success">Guardar Cambios</button>
+        <a href="{% url 'persons_list' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

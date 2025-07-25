@@ -8,12 +8,6 @@
         <i class="fas fa-tachometer-alt me-2"></i>
         Dashboard de Préstamos
     </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newLoanModal">
-            <i class="fas fa-plus me-2"></i>
-            Nuevo Préstamo
-        </button>
-    </div>
 </div>
 
 <!-- Estadísticas -->
@@ -41,6 +35,42 @@
         </div>
     </div>
 </div>
+
+
+
+<!-- Formulario para crear préstamo -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-plus me-2"></i>
+        Crear Nuevo Préstamo
+    </div>
+    <div class="card-body">
+        <form method="post" action="{% url 'create_loan' %}" id="loanForm">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="object_search" class="form-label">Buscar Objeto</label>
+                    <input type="text" class="form-control" id="object_search" placeholder="Buscar por nombre o código..." autocomplete="off">
+                    <input type="hidden" id="object_code" name="object_code" required>
+                    <div id="object_results" class="mt-2"></div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="person_search" class="form-label">Buscar Persona por RUT</label>
+                    <input type="text" class="form-control" id="person_search" placeholder="Ingrese RUT" autocomplete="off">
+                    <input type="hidden" id="person_rut" name="person_rut" required>
+                    <div id="person_results" class="mt-2"></div>
+                    <div class="form-text">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Si la persona no existe, se registrará automáticamente con el RUT proporcionado.
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Crear Préstamo</button>
+        </form>
+    </div>
+</div>
+
+
 
 <!-- Préstamos Activos -->
 <div class="row">
@@ -129,45 +159,6 @@
     </div>
 </div>
 
-<!-- Modal para Nuevo Préstamo -->
-<div class="modal fade" id="newLoanModal" tabindex="-1" aria-labelledby="newLoanModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="newLoanModalLabel">
-                    <i class="fas fa-plus me-2"></i>
-                    Crear Nuevo Préstamo
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="post" action="{% url 'create_loan' %}">
-                <div class="modal-body">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="object_search" class="form-label">Buscar Objeto</label>
-                        <input type="text" class="form-control" id="object_search" placeholder="Buscar por nombre...">
-                        <input type="hidden" id="object_code" name="object_code" required>
-                        <div id="object_results" class="mt-2"></div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="person_search" class="form-label">Buscar Persona por RUT</label>
-                        <input type="text" class="form-control" id="person_search" placeholder="Ingrese RUT (se registrará automáticamente si no existe)">
-                        <input type="hidden" id="person_rut" name="person_rut" required>
-                        <div id="person_results" class="mt-2"></div>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Si la persona no existe, se registrará automáticamente con el RUT proporcionado.
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Crear Préstamo</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -190,6 +181,7 @@ document.getElementById('object_search').addEventListener('input', function() {
                         document.getElementById('object_search').value = `${obj.code} - ${obj.name}`;
                         document.getElementById('object_code').value = obj.code;
                         resultsDiv.innerHTML = '';
+                        document.getElementById('person_search').focus();
                     };
                     resultsDiv.appendChild(div);
                 });
@@ -201,16 +193,12 @@ document.getElementById('object_search').addEventListener('input', function() {
 document.getElementById('person_search').addEventListener('input', function() {
     const query = this.value.trim();
     const resultsDiv = document.getElementById('person_results');
-    
-    // Permitir usar directamente el RUT si no se encuentran resultados
     document.getElementById('person_rut').value = query;
-    
     if (query.length > 2) {
         fetch(`/search-persons/?q=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(data => {
                 resultsDiv.innerHTML = '';
-                
                 if (data.persons.length > 0) {
                     data.persons.forEach(person => {
                         const div = document.createElement('div');
@@ -225,7 +213,6 @@ document.getElementById('person_search').addEventListener('input', function() {
                         resultsDiv.appendChild(div);
                     });
                 } else if (query.length >= 7) {
-                    // Mostrar mensaje de que se registrará automáticamente
                     const div = document.createElement('div');
                     div.className = 'alert alert-info py-2';
                     div.innerHTML = `<i class="fas fa-user-plus me-2"></i>RUT "${query}" será registrado automáticamente`;
@@ -234,6 +221,20 @@ document.getElementById('person_search').addEventListener('input', function() {
             });
     } else {
         resultsDiv.innerHTML = '';
+    }
+});
+
+// Navegación con Enter
+document.getElementById('object_search').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('person_search').focus();
+    }
+});
+document.getElementById('person_search').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('loanForm').submit();
     }
 });
 </script>

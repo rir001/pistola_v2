@@ -16,4 +16,8 @@ urlpatterns = [
     path('objects/', views.objects_management, name='objects_management'),
     path('objects/create-bulk/', views.create_objects_bulk, name='create_objects_bulk'),
     path('objects/create-kind/', views.create_kind, name='create_kind'),
+
+    # Gestión de personas
+    path('persons/', views.persons_list, name='persons_list'),
+    path('persons/edit/<str:rut>/', views.edit_person, name='edit_person'),
 ]

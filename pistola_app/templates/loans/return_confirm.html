@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Devolución{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Confirmar Devolución</h2>
+    <div class="alert alert-info">
+        <strong>Persona:</strong> {{ person.first_name }} {{ person.last_name }} ({{ person.RUT }})<br>
+        <strong>Objeto:</strong> {{ loan.object.name }} ({{ loan.object.code }})<br>
+        <strong>Fecha de Préstamo:</strong> {{ loan.loan_date }}<br>
+        {% if debt > 0 %}
+            <strong class="text-danger">Esta persona tiene deuda acumulada: ${{ debt }}</strong>
+        {% else %}
+            <strong class="text-success">Esta persona no tiene deuda.</strong>
+        {% endif %}
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success">Confirmar Devolución</button>
+        <a href="{% url 'loan_dashboard' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
