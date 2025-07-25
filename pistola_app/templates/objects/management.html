@@ -57,46 +57,7 @@
     </div>
 </div>
 
-<!-- Tipos de Objetos -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-tags me-2"></i>
-                    Tipos de Objetos
-                </h5>
-            </div>
-            <div class="card-body">
-                {% if kinds %}
-                    <div class="row">
-                        {% for kind in kinds %}
-                        <div class="col-md-4 mb-3">
-                            <div class="card border-light">
-                                <div class="card-body">
-                                    <h6 class="card-title">{{ kind.name }}</h6>
-                                    <p class="card-text text-muted">{{ kind.description|default:"Sin descripción" }}</p>
-                                    <small class="text-muted">
-                                        Código: {{ kind.name|slice:":3"|upper }}****
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-tags text-muted" style="font-size: 3rem;"></i>
-                        <p class="text-muted mt-2">No hay tipos de objetos registrados</p>
-                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#newKindModal">
-                            Crear Primer Tipo
-                        </button>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <!-- Formulario de búsqueda y filtro -->
 <form method="get" class="row g-3 mb-3">
@@ -107,7 +68,7 @@
         <select class="form-select" name="kind">
             <option value="">Todos los tipos</option>
             {% for kind in kinds %}
-                <option value="{{ kind.id }}" {% if request.GET.kind == kind.id|stringformat:"s" %}selected{% endif %}>{{ kind.name }}</option>
+                <option value="{{ kind.id }}" {% if request.GET.kind == kind.id|stringformat:"s" %}selected{% endif %}>{{ kind.code }}</option>
             {% endfor %}
         </select>
     </div>
@@ -116,6 +77,8 @@
         <a href="{% url 'objects_management' %}" class="btn btn-secondary">Limpiar</a>
     </div>
 </form>
+
+
 
 <!-- Objetos Recientes -->
 <div class="row">
@@ -145,7 +108,7 @@
                                 <tr>
                                     <td><span class="badge bg-secondary">{{ object.code }}</span></td>
                                     <td>{{ object.name }}</td>
-                                    <td>{{ object.kind.name }}</td>
+                                    <td>{{ object.kind.code }}</td>
                                     <td>
                                         {% if object.is_loaned %}
                                             <span class="badge bg-warning">Prestado</span>
@@ -188,10 +151,15 @@
                 <div class="modal-body">
                     {% csrf_token %}
                     <div class="mb-3">
+                        <label for="kind_code" class="form-label">Código del Tipo</label>
+                        <input type="text" class="form-control" id="kind_code" name="code" required
+                               placeholder="Ej: CAL, PEL, ANT">
+                        <div class="form-text">Los primeros 3 caracteres se usarán para el código</div>
+                    </div>
+                    <div class="mb-3">
                         <label for="kind_name" class="form-label">Nombre del Tipo</label>
                         <input type="text" class="form-control" id="kind_name" name="name" required
-                               placeholder="Ej: Pelota, Computadora, Herramienta">
-                        <div class="form-text">Los primeros 3 caracteres se usarán para el código</div>
+                               placeholder="Ej: Calculadora, Pelota, Antiparra">
                     </div>
                     <div class="mb-3">
                         <label for="kind_description" class="form-label">Descripción (Opcional)</label>
@@ -230,7 +198,7 @@
                                     <select class="form-select" id="kind" name="kind" required>
                                         <option value="">Seleccionar tipo...</option>
                                         {% for kind in kinds %}
-                                        <option value="{{ kind.id }}">{{ kind.name }}</option>
+                                        <option value="{{ kind.code }}">{{ kind.code }} - {{ kind.name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>

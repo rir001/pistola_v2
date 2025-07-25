@@ -50,7 +50,7 @@
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="object_search" class="form-label">Buscar Objeto</label>
-                    <input type="text" class="form-control" id="object_search" placeholder="Buscar por nombre o código..." autocomplete="off">
+                    <input type="text" class="form-control" id="object_search" placeholder="Buscar por nombre o código..." autocomplete="on">
                     <input type="hidden" id="object_code" name="object_code" required>
                     <div id="object_results" class="mt-2"></div>
                 </div>
@@ -166,7 +166,7 @@
 // Búsqueda de objetos
 document.getElementById('object_search').addEventListener('input', function() {
     const query = this.value;
-    if (query.length > 2) {
+    if (query.length > 4) {
         fetch(`/search-objects/?q=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(data => {
@@ -228,7 +228,12 @@ document.getElementById('person_search').addEventListener('input', function() {
 document.getElementById('object_search').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
-        document.getElementById('person_search').focus();
+        const firstResult = document.querySelector('#object_results .alert');
+        if (firstResult) {
+            firstResult.click();
+        } else {
+            document.getElementById('person_search').focus();
+        }
     }
 });
 document.getElementById('person_search').addEventListener('keydown', function(e) {

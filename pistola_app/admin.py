@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import Loan, Object, Person, Kind
 
-# Register your models here.
+
 @admin.register(Object)
 class ObjectAdmin(admin.ModelAdmin):
     list_display = ('code', 'name', 'kind', 'number', 'description')
@@ -24,7 +24,7 @@ class LoanAdmin(admin.ModelAdmin):
 
 @admin.register(Kind)
 class KindAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description')
-    search_fields = ('name',)
-    prepopulated_fields = {'name': ('description',)}
-    ordering = ('name',)
+    list_display = ('code', 'name', 'description')
+    search_fields = ('code', 'name')
+    prepopulated_fields = {'code': ('name', 'description')}
+    ordering = ('code', 'name')

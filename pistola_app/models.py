@@ -5,11 +5,15 @@ import numpy as np
 import pandas as pd
 
 class Kind(models.Model):
-    name = models.CharField(max_length=50, unique=True)
+    code = models.CharField(max_length=3, primary_key=True, editable=False)
+    name = models.CharField(max_length=20, unique=True)
     description = models.TextField(blank=True)
 
     def __str__(self):
-        return self.name
+        return self.code
+
+
+
 
 def validate_code(value):
     if value > 9999:
@@ -33,10 +37,9 @@ class Object(models.Model):
 
     description = models.TextField(blank=True)
 
-    def save(self, *args, **kwargs):
-        # Generar el código automáticamente
+    def save(self, *args, **kwargs): # Executed before saving the object
         if not self.code:
-            kind_code = self.kind.name[:3].upper()
+            kind_code = self.kind.code[:3].upper()
             self.code = f"{kind_code}{self.number:04d}"
         super().save(*args, **kwargs)
 
@@ -52,20 +55,20 @@ class Object(models.Model):
 
 
 class Person(models.Model):
-    RUT = models.CharField(max_length=12, primary_key=True)
-    first_name = models.CharField(max_length=50, blank=True)
-    last_name = models.CharField(max_length=50, blank=True)
-    email = models.EmailField(unique=True, blank=True)
-    phone = models.CharField(max_length=20, blank=True)  # Nuevo campo
-    comments = models.TextField(blank=True)              # Nuevo campo
+    RUT         = models.CharField(max_length=9, primary_key=True)
+    NA          = models.CharField(max_length=8, unique=True, blank=True, null=True)
+    first_name  = models.CharField(max_length=50, blank=True)
+    last_name   = models.CharField(max_length=50, blank=True)
+    phone       = models.CharField(max_length=12, blank=True)
+    email       = models.EmailField(unique=True, blank=True)
+    comments    = models.TextField(blank=True)
 
     def __str__(self):
         return f"{self.RUT}"
 
     def get_debt(self):
-        loans = self.loan_set.all()
         total_debt = 0
-        for loan in loans:
+        for loan in self.loan_set.all():
             loan_date = loan.loan_date
             if loan.return_date:
                 end_date = loan.return_date
@@ -86,6 +89,7 @@ class Loan(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     loan_date = models.DateField()
     return_date = models.DateField(null=True, blank=True)
+    comments = models.TextField(blank=True)
 
     def __str__(self):
         return f"{self.object.name} loaned to {self.person.RUT}"

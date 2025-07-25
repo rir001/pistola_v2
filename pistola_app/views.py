@@ -174,7 +174,10 @@ def create_objects_bulk(request):
                 messages.error(request, 'No se pueden crear más de 100 objetos a la vez')
                 return redirect('objects_management')
 
-            kind = Kind.objects.get(id=kind_id)
+            print(99)
+            print(Kind.objects.all(), kind_id)
+            kind = Kind.objects.get(code=kind_id)
+            print(100)
             created_objects = []
             errors = []
 
@@ -212,15 +215,23 @@ def create_kind(request):
     """Vista para crear un nuevo tipo de objeto"""
     if request.method == 'POST':
         try:
-            name = request.POST.get('name')
+            code = request.POST.get('code').upper().strip()
+            if not code or len(code) < 3:
+                messages.error(request, 'El código debe tener al menos 3 caracteres')
+                return redirect('objects_management')
+            if Kind.objects.filter(code=code).exists():
+                messages.error(request, f'El código "{code}" ya existe')
+                return redirect('objects_management')
+            name = request.POST.get('name', '')
             description = request.POST.get('description', '')
 
             kind = Kind.objects.create(
+                code=code,
                 name=name,
                 description=description
             )
 
-            messages.success(request, f'Tipo de objeto "{name}" creado exitosamente')
+            messages.success(request, f'Tipo de objeto "{code}" creado exitosamente')
 
         except Exception as e:
             messages.error(request, f'Error al crear tipo de objeto: {str(e)}')

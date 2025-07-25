@@ -46,7 +46,7 @@
                             <td>{{ person.email }}</td>
                             <td>{{ person.phone }}</td>
                             <td>{{ person.comments|truncatechars:30 }}</td>
-                            <td>{{ person.get_debt}}</td>
+                            <td>${{ person.get_debt }}</td>
                             <td>
                                 <a href="{% url 'edit_person' person.RUT %}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit"></i> Editar
